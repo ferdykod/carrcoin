@@ -8,8 +8,8 @@ import java.util.HashMap;
 
 public class BlockChain {
 
-    public static ArrayList<Block>                   blockchain          = new ArrayList<>();
-    public static HashMap<String, TransactionOutput> UTXOs               = new HashMap<>();
+    public static ArrayList<Block>                   blockchain          = new ArrayList<Block>();
+    public static HashMap<String, TransactionOutput> UTXOs               = new HashMap<String, TransactionOutput>();
     public static final float                        MINIMUM_TRANSACTION = 0.01f;
     public static int                                difficulty          = 5;
     public static Wallet walletA;
@@ -68,7 +68,7 @@ public class BlockChain {
         Block currentBlock;
         Block previousBlock;
         String hashTarget = new String(new char[difficulty]).replace('\0', '0');
-        HashMap<String, TransactionOutput> tempUTXOs = new HashMap<>();
+        HashMap<String, TransactionOutput> tempUTXOs = new HashMap<String, TransactionOutput>();
         tempUTXOs.put(genesisTransaction.outputs.get(0).id, genesisTransaction.outputs.get(0));
 
         for(int i=1; i < blockchain.size(); i++){

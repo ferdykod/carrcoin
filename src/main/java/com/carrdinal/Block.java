@@ -7,7 +7,7 @@ public class Block {
     private       String hash;
     private final String previousHash;
     public String merkleRoot;
-    public ArrayList<Transaction> transactions = new ArrayList<>();
+    public ArrayList<Transaction> transactions = new ArrayList<Transaction>();
     private final long   timestamp;
     private       int    nonce;
 

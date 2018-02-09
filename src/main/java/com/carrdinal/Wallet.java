@@ -14,7 +14,7 @@ import java.util.HashMap;
 public class Wallet {
     public PrivateKey privateKey;
     public PublicKey publicKey;
-    public HashMap<String, TransactionOutput> UTXOs = new HashMap<>();
+    public HashMap<String, TransactionOutput> UTXOs = new HashMap<String, TransactionOutput>();
 
     public Wallet(){
         generateKeyPair();
@@ -52,7 +52,7 @@ public class Wallet {
             return null;
         }
 
-        ArrayList<TransactionInput> inputs = new ArrayList<>();
+        ArrayList<TransactionInput> inputs = new ArrayList<TransactionInput>();
         float total = 0;
         for(TransactionOutput UTXO: UTXOs.values()){
             total += UTXO.value;
