@@ -10,18 +10,27 @@ public class Peer2Peer implements DataSender, DataListener {
 
     public Peer peer; // Holds peers IP and port number
     public int port = 8008; // Port to host connection on
-    public Socket connection; // Socket over which communication takes place
+    public PeerConnection connection; // Socket over which communication takes place
     public DataInputStream inputStream; // Get info coming in over the connection
     public DataOutputStream outputStream; // Send info out over the connection
-    public ListenerThread peerThread; // Thread to listen on
-    public Thread sendThread; // Thread to send on
+    public Thread thread;
+    private boolean running;
 
     public Peer2Peer(){
 
     }
 
+    // Background thread that processes messages
     public void start(){
+        this.thread = new Thread(new Runnable() {
+            public void run() {
 
+            }
+        });
+        synchronized (this){
+            running = true;
+        }
+        this.thread.setName("P2P: " + connection.toString());
     }
 
     public void stop(){
