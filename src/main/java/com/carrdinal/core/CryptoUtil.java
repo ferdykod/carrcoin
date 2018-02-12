@@ -1,4 +1,4 @@
-package com.carrdinal;
+package com.carrdinal.core;
 
 import java.security.Key;
 import java.security.MessageDigest;

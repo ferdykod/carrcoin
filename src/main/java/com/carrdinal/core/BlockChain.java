@@ -1,4 +1,4 @@
-package com.carrdinal;
+package com.carrdinal.core;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 

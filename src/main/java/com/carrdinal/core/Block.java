@@ -1,4 +1,4 @@
-package com.carrdinal;
+package com.carrdinal.core;
 
 import java.util.ArrayList;
 import java.util.Date;

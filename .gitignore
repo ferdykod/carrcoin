@@ -50,8 +50,4 @@ crashlytics-build.properties
 fabric.properties
 src/main/resources/
 src/test/
-target/generated-sources/
-target/classes/com/carrdinal/ClientThread.class
-target/classes/com/carrdinal/Peer.class
-target/classes/com/carrdinal/Peer2Peer.class
-target/classes/com/carrdinal/ServerThread.class
+target
