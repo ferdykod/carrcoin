@@ -5,23 +5,21 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
+import java.util.HashSet;
 
 public class Peer2Peer {
 
     private int port = 8888;
-    private Socket       clientSocket;
-    private Socket       serverSocket;
-    private ServerSocket server;
-    private ArrayList<Peer> peers = new ArrayList<Peer>();
-    private DataInputStream inputStream;
+    private HashSet<Peer>    peers;
+    private DataInputStream  inputStream;
     private DataOutputStream outputStream;
-    private Thread serverThread;
-    private Thread clientThread;
-    private boolean runningServer;
+    private Thread           serverThread;
+    private Thread           clientThread;
+    private boolean          runningServer;
 
     public Peer2Peer(int port){
         this.port = port;
+        peers = new HashSet<>();
         serverThread = new Thread(new Runnable() {
             public void run() {
                 try {
@@ -48,17 +46,19 @@ public class Peer2Peer {
 
     public void listen() throws IOException{
         System.out.println("Server starting...");
-        this.server = new ServerSocket(this.port);
+        ServerSocket server = new ServerSocket(this.port);
         System.out.println("Server started on port " + this.port);
 
         String command;
         Peer peer;
         while(runningServer){
-            serverSocket = server.accept();
-            inputStream = new DataInputStream(serverSocket.getInputStream());
-            outputStream = new DataOutputStream(serverSocket.getOutputStream());
-            System.out.println("Connection received from: " + serverSocket.toString());
-            peer = new Peer(serverSocket.getInetAddress().toString(), serverSocket.getPort());
+            Socket socket = server.accept();
+            inputStream = new DataInputStream(socket.getInputStream());
+            outputStream = new DataOutputStream(socket.getOutputStream());
+            String clientAddress = socket.getInetAddress().getHostAddress();
+            int clientPort = socket.getPort();
+            System.out.println("Connection received from: " + clientAddress + ":" + clientPort);
+            peer = new Peer(socket.getInetAddress().getHostAddress(), clientPort);
             peers.add(peer);
 
             System.out.println("New peer: " + peer.toString());
@@ -69,9 +69,9 @@ public class Peer2Peer {
 
     public void connect(String host, int port){
         try {
-            clientSocket = new Socket(host, port);
-            outputStream = new DataOutputStream(clientSocket.getOutputStream());
-            inputStream = new DataInputStream(clientSocket.getInputStream());
+            Socket socket = new Socket(host, port);
+            outputStream = new DataOutputStream(socket.getOutputStream());
+            inputStream = new DataInputStream(socket.getInputStream());
 
         } catch (IOException e) {
             e.printStackTrace();
