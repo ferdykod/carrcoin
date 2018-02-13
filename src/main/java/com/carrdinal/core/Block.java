@@ -55,4 +55,9 @@ public class Block {
         System.out.println("Transaction successfully added to block.");
         return true;
     }
+
+    public String toJSON(){
+        // TODO
+        return null;
+    }
 }

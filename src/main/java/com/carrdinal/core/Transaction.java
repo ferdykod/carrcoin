@@ -1,46 +1,50 @@
 package com.carrdinal.core;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
 
 public class Transaction {
 
-    public String    transactionID;
-    public PublicKey sender;
-    public PublicKey recipient;
-    public float     value;
-    public byte[]    signature;
+    ObjectMapper mapper = new ObjectMapper();
+    private BlockChain blockchain;
+    public String      transactionID;
+    public String      senderPubK;
+    public String      recipientPubK;
+    public float       value;
+    public byte[]      signature;
 
     public ArrayList<TransactionInput> inputs;
-    public ArrayList<TransactionOutput> outputs = new ArrayList<TransactionOutput>();
+    public ArrayList<TransactionOutput> outputs = new ArrayList<>();
 
     private static int sequence = 0;
 
     public Transaction(PublicKey sender, PublicKey recipient, float value, ArrayList<TransactionInput> inputs){
-        this.sender = sender;
-        this.recipient = recipient;
+        this.blockchain = BlockChain.getInstance();
+        this.senderPubK = CryptoUtil.getStringFromKey(sender);
+        this.recipientPubK = CryptoUtil.getStringFromKey(recipient);
         this.value = value;
         this.inputs = inputs;
     }
 
     public String calculateHash(){
         sequence++;
-        return CryptoUtil.applySHA256(CryptoUtil.getStringFromKey(sender) +
-                                    CryptoUtil.getStringFromKey(recipient) +
-                                    Float.toString(value) + sequence);
+        return CryptoUtil.applySHA256(senderPubK + recipientPubK + Float.toString(value) + sequence);
     }
 
     // Signs any data which we don't want tampered with
     public void generateSignature(PrivateKey privateKey){
-        String data = CryptoUtil.getStringFromKey(sender) + CryptoUtil.getStringFromKey(recipient) + Float.toString(value);
+        String data = senderPubK + recipientPubK + Float.toString(value);
         signature = CryptoUtil.applyECDSASignature(privateKey, data);
     }
 
     // Verifies the data we signed hasn't been tampered with
     public boolean verifySignature(){
-        String data = CryptoUtil.getStringFromKey(sender) + CryptoUtil.getStringFromKey(recipient) + Float.toString(value);
-        return CryptoUtil.verifyECDSASignature(sender, data, signature);
+        String data = senderPubK + recipientPubK + Float.toString(value);
+        return CryptoUtil.verifyECDSASignature(CryptoUtil.getDecodedKeyFromString(senderPubK), data, signature);
     }
 
     public boolean processTransaction() {
@@ -50,7 +54,7 @@ public class Transaction {
         }
 
         for (TransactionInput input: inputs) {
-            input.UTXO = BlockChain.UTXOs.get(input.transactionOutputID);
+            input.UTXO = blockchain.UTXOs.get(input.transactionOutputID);
         }
 
         if (getInputsValue() < BlockChain.MINIMUM_TRANSACTION) {
@@ -64,13 +68,13 @@ public class Transaction {
 
         // Add outputs to the unspent list
         for(TransactionOutput output: outputs){
-            BlockChain.UTXOs.put(output.id, output);
+            blockchain.UTXOs.put(output.id, output);
         }
 
         // Remove transaction inputs from UTXO lists as spent:
         for (TransactionInput input: inputs){
             if(input.UTXO == null) continue;
-            BlockChain.UTXOs.remove(input.UTXO.id);
+            blockchain.UTXOs.remove(input.UTXO.id);
         }
 
         return true;
@@ -91,5 +95,15 @@ public class Transaction {
             total += output.value;
         }
         return total;
+    }
+
+    public String toJSON(){
+        // TODO
+        try {
+            return mapper.writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

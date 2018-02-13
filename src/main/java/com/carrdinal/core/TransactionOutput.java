@@ -5,11 +5,11 @@ import java.security.PublicKey;
 public class TransactionOutput {
 
     public String id;
-    public PublicKey recipient;
+    public String recipient;
     public float value;
     public String parentTransactionID;
 
-    public TransactionOutput(PublicKey recipient, float value, String parentTransactionID){
+    public TransactionOutput(String recipient, float value, String parentTransactionID){
         this.recipient = recipient;
         this.value = value;
         this.parentTransactionID = parentTransactionID;
@@ -18,7 +18,7 @@ public class TransactionOutput {
                                          parentTransactionID);
     }
 
-    public boolean isOwnedBy(PublicKey publicKey){
+    public boolean isOwnedBy(String publicKey){
         return (publicKey == recipient);
     }
 

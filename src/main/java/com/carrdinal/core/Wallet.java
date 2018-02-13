@@ -12,11 +12,13 @@ import java.util.HashMap;
 
 
 public class Wallet {
+    private BlockChain blockchain;
     public PrivateKey privateKey;
     public PublicKey publicKey;
     public HashMap<String, TransactionOutput> UTXOs = new HashMap<String, TransactionOutput>();
 
     public Wallet(){
+        this.blockchain = BlockChain.getInstance();
         generateKeyPair();
     }
 
@@ -37,7 +39,7 @@ public class Wallet {
 
     public float getBalance() {
         float total = 0;
-        for(TransactionOutput UTXO: BlockChain.UTXOs.values()){
+        for(TransactionOutput UTXO: blockchain.UTXOs.values()){
             if(UTXO.isOwnedBy(publicKey)){
                 UTXOs.put(UTXO.id, UTXO); // Add to *our* list of unspent transactions
                 total += UTXO.value;

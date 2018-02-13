@@ -1,8 +1,10 @@
 package com.carrdinal.network;
 
+import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashSet;
@@ -53,8 +55,8 @@ public class Peer2Peer {
         Peer peer;
         while(runningServer){
             Socket socket = server.accept();
-            inputStream = new DataInputStream(socket.getInputStream());
-            outputStream = new DataOutputStream(socket.getOutputStream());
+            DataInputStream in = new DataInputStream(socket.getInputStream());
+            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
             String clientAddress = socket.getInetAddress().getHostAddress();
             int clientPort = socket.getPort();
             System.out.println("Connection received from: " + clientAddress + ":" + clientPort);
@@ -62,8 +64,8 @@ public class Peer2Peer {
             peers.add(peer);
 
             System.out.println("New peer: " + peer.toString());
-            command = receive();
-            send(serve(command));
+            command = receive(in);
+            send(serve(command), out);
         }
     }
 
@@ -87,20 +89,20 @@ public class Peer2Peer {
         }
     }
 
-    public void send(String data){
+    public void send(String data, DataOutputStream out){
         System.out.println("Sending message: " + data);
         try {
-            outputStream.writeUTF(data);
-            outputStream.flush();
+            out.writeUTF(data);
+            out.flush();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public String receive(){
+    public String receive(DataInputStream in){
         String data = null;
         try {
-            data = inputStream.readUTF();
+            data = in.readUTF();
             System.out.println("Received message: "+data);
         } catch (IOException e) {
             e.printStackTrace();
@@ -108,17 +110,8 @@ public class Peer2Peer {
         return data;
     }
 
-    public static void main(String[] args){
-        Peer2Peer peer1 = new Peer2Peer(8888);
-        Peer2Peer peer2 = new Peer2Peer(8889);
+    public static void main(String[] args) throws IOException {
 
-        peer1.start();
-        peer2.start();
-
-        peer1.connect("127.0.0.1", 8889);
-        peer2.connect("127.0.0.1", 8888);
-        peer1.send("ping");
-        peer1.receive();
     }
 
 

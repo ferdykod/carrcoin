@@ -1,10 +1,16 @@
 package com.carrdinal.core;
 
 import java.security.Key;
+import java.security.KeyFactory;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
+import java.security.interfaces.ECPublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Base64;
 
@@ -54,6 +60,18 @@ public class CryptoUtil {
         return Base64.getEncoder().encodeToString(key.getEncoded());
     }
 
+    public static PublicKey getDecodedKeyFromString(String key){
+        PublicKey publicKey;
+        try {
+            byte[] decoded = Base64.getDecoder().decode(key);
+            KeyFactory factory = KeyFactory.getInstance("ECDSA", "BC");
+            publicKey = factory.generatePublic(new X509EncodedKeySpec(decoded));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return publicKey;
+    }
+
     public static String getMerkleRoot(ArrayList<Transaction> transactions){
         int count = transactions.size();
         ArrayList<String> previousTreeLayer = new ArrayList<String>();
@@ -62,7 +80,7 @@ public class CryptoUtil {
         }
         ArrayList<String> treeLayer = previousTreeLayer;
         while(count > 1){
-            treeLayer = new ArrayList<String>();
+            treeLayer = new ArrayList<>();
             for (int i = 1; i < previousTreeLayer.size(); i++) {
                 treeLayer.add(applySHA256(previousTreeLayer.get(i-1) + previousTreeLayer.get(i)));
             }
