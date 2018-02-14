@@ -1,31 +1,40 @@
 package com.carrdinal.core;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.Serializable;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
 
-public class Transaction {
+public class Transaction implements Serializable{
 
-    ObjectMapper mapper = new ObjectMapper();
-    private BlockChain blockchain;
-    public String      transactionID;
-    public String      senderPubK;
-    public String      recipientPubK;
-    public float       value;
-    public byte[]      signature;
+    private ObjectMapper mapper = new ObjectMapper();
+    @JsonIgnore private BlockChain blockchain;
 
-    public ArrayList<TransactionInput> inputs;
-    public ArrayList<TransactionOutput> outputs = new ArrayList<>();
+    @JsonProperty("id")        public  String     transactionID;
+    @JsonProperty("sender")    public  String     senderPubK;
+    @JsonProperty("recipient") public  String     recipientPubK;
+    @JsonProperty("value")     public  float      value;
+    @JsonProperty("signature") public  byte[]     signature;
 
-    private static int sequence = 0;
+    @JsonProperty("inputs")  public ArrayList<TransactionInput> inputs;
+    @JsonProperty("outputs") public ArrayList<TransactionOutput> outputs = new ArrayList<>();
 
-    public Transaction(PublicKey sender, PublicKey recipient, float value, ArrayList<TransactionInput> inputs){
+    @JsonProperty("sequence") private static int sequence = 0;
+
+    @JsonCreator
+    public Transaction(@JsonProperty("sender") String sender,
+                       @JsonProperty("recipient") String recipient,
+                       @JsonProperty("value") float value,
+                       @JsonProperty("inputs") ArrayList<TransactionInput> inputs){
         this.blockchain = BlockChain.getInstance();
-        this.senderPubK = CryptoUtil.getStringFromKey(sender);
-        this.recipientPubK = CryptoUtil.getStringFromKey(recipient);
+        this.senderPubK = sender;
+        this.recipientPubK = recipient;
         this.value = value;
         this.inputs = inputs;
     }
@@ -54,7 +63,7 @@ public class Transaction {
         }
 
         for (TransactionInput input: inputs) {
-            input.UTXO = blockchain.UTXOs.get(input.transactionOutputID);
+            input.UTXO = blockchain.UTXOs.get(input.UTXO.id);
         }
 
         if (getInputsValue() < BlockChain.MINIMUM_TRANSACTION) {
@@ -63,8 +72,8 @@ public class Transaction {
 
         float leftOver = getInputsValue() - value;
         transactionID = calculateHash();
-        outputs.add(new TransactionOutput(this.recipient, value, transactionID)); // Send value to recipient
-        outputs.add(new TransactionOutput(this.sender, leftOver, transactionID)); // Send left over back to sender
+        outputs.add(new TransactionOutput(this.recipientPubK, value, transactionID)); // Send value to recipientPubK
+        outputs.add(new TransactionOutput(this.senderPubK, leftOver, transactionID)); // Send left over back to sender
 
         // Add outputs to the unspent list
         for(TransactionOutput output: outputs){
@@ -80,8 +89,11 @@ public class Transaction {
         return true;
     }
 
+    @JsonIgnore
     public float getInputsValue() {
         float total = 0;
+        if(inputs == null) return total;
+
         for(TransactionInput input: inputs){
             if(input.UTXO == null) continue;
             total += input.UTXO.value;
@@ -89,6 +101,7 @@ public class Transaction {
         return total;
     }
 
+    @JsonIgnore
     public float getOutputsValue(){
         float total = 0;
         for(TransactionOutput output: outputs){
@@ -98,7 +111,6 @@ public class Transaction {
     }
 
     public String toJSON(){
-        // TODO
         try {
             return mapper.writeValueAsString(this);
         } catch (JsonProcessingException e) {

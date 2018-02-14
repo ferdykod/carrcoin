@@ -1,25 +1,39 @@
 package com.carrdinal.core;
 
-import java.security.PublicKey;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class TransactionOutput {
+import java.io.Serializable;
 
-    public String id;
-    public String recipient;
-    public float value;
-    public String parentTransactionID;
+public class TransactionOutput implements Serializable {
 
-    public TransactionOutput(String recipient, float value, String parentTransactionID){
-        this.recipient = recipient;
+    @JsonProperty("id")        public String id;
+    @JsonProperty("recipient") public String recipientPubK;
+    @JsonProperty("value")     public float  value;
+    @JsonProperty("parent_tx") public String parentTransactionID;
+
+    public TransactionOutput(String recipientPubK, float value, String parentTransactionID){
+        this.recipientPubK = recipientPubK;
         this.value = value;
         this.parentTransactionID = parentTransactionID;
-        this.id = CryptoUtil.applySHA256(CryptoUtil.getStringFromKey(recipient) +
+        this.id = CryptoUtil.applySHA256(recipientPubK +
                                          Float.toString(value) +
                                          parentTransactionID);
     }
 
+    @JsonCreator
+    public TransactionOutput(@JsonProperty("id") String id,
+                             @JsonProperty("recipient") String recipientPubK,
+                             @JsonProperty("value") float value,
+                             @JsonProperty("parent_tx") String parentTransactionID){
+        this.id = id;
+        this.recipientPubK = recipientPubK;
+        this.value = value;
+        this.parentTransactionID = parentTransactionID;
+    }
+
     public boolean isOwnedBy(String publicKey){
-        return (publicKey == recipient);
+        return publicKey.equals(recipientPubK);
     }
 
 }

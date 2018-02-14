@@ -1,22 +1,40 @@
 package com.carrdinal.core;
 
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
+import java.io.File;
+import java.io.Serializable;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class BlockChain {
+public class BlockChain implements Serializable {
 
-    public static final float MINIMUM_TRANSACTION = 0.01f;
-    public static int         difficulty          = 5;
+    private static ObjectMapper mapper = new ObjectMapper();
 
-    public ArrayList<Block> blockchain = new ArrayList<>();
-    public HashMap<String, TransactionOutput> UTXOs = new HashMap<>();
-    private Transaction genesisTransaction;
+    @JsonProperty("min_tx") public static final float MINIMUM_TRANSACTION = 0.01f;
+    @JsonProperty("difficulty") public static int difficulty = 5;
+
+    @JsonProperty("blocks") public ArrayList<Block> blockchain = new ArrayList<>();
+    @JsonProperty("utxos") public HashMap<String, TransactionOutput> UTXOs = new HashMap<>();
+    @JsonProperty("genesis_tx") private Transaction genesisTransaction;
 
     private static BlockChain instance;
+
+    @JsonCreator
+    public BlockChain(@JsonProperty("blocks") ArrayList<Block> blockchain,
+            @JsonProperty("utxos") HashMap<String, TransactionOutput> UTXOs,
+            @JsonProperty("genesis_tx") Transaction genesisTransaction){
+        this.blockchain = blockchain;
+        this.UTXOs = UTXOs;
+        this.genesisTransaction = genesisTransaction;
+    }
 
     private BlockChain(){
 
@@ -37,49 +55,57 @@ public class BlockChain {
         Wallet walletA = new Wallet();
         Wallet walletB = new Wallet();
         Wallet coinbase = new Wallet();
-        BlockChain blockchain = BlockChain.getInstance();
+        BlockChain blockchain = BlockChain.loadFromFile("blockchain.json");
 
-        blockchain.genesisTransaction = new Transaction(coinbase.publicKey, walletA.publicKey, 100f, null);
+        System.out.println(blockchain.isChainValid());
+
+//        //testing
+//        Block block1 = new Block(genesisBlock.getHash());
+//        System.out.println("\nWalletA's balance is: " + walletA.getBalance());
+//        System.out.println("\nWalletA is Attempting to send funds (40) to WalletB...");
+//        block1.addTransaction(walletA.generateTransaction(walletB.publicKey, 40f));
+//        blockchain.addBlock(block1);
+//        System.out.println(genesisBlock.toJSON());
+//        System.out.println("\nWalletA's balance is: " + walletA.getBalance());
+//        System.out.println("WalletB's balance is: " + walletB.getBalance());
+//
+//        Block block2 = new Block(block1.getHash());
+//        System.out.println("\nWalletA Attempting to send more funds (1000) than it has...");
+//        block2.addTransaction(walletA.generateTransaction(walletB.publicKey, 1000f));
+//        blockchain.addBlock(block2);
+//        System.out.println("\nWalletA's balance is: " + walletA.getBalance());
+//        System.out.println("WalletB's balance is: " + walletB.getBalance());
+//
+//        Block block3 = new Block(block2.getHash());
+//        System.out.println("\nWalletB is Attempting to send funds (20) to WalletA...");
+//        block3.addTransaction(walletB.generateTransaction( walletA.publicKey, 20));
+//        System.out.println("\nWalletA's balance is: " + walletA.getBalance());
+//        System.out.println("WalletB's balance is: " + walletB.getBalance());
+//        blockchain.addBlock(block3);
+//        System.out.println(block3.toJSON());
+//
+//        blockchain.isChainValid();
+//        System.out.println(blockchain.toJSON());
+//        blockchain.saveToFile();
+    }
+
+    private static void createGenesisBlock(Wallet walletA, Wallet coinbase, BlockChain blockchain) {
+        System.out.println("Creating and mining genesis block...");
+
+        blockchain.genesisTransaction = new Transaction(coinbase.publicKey, walletA.publicKey, 100f, new ArrayList<TransactionInput>());
         blockchain.genesisTransaction.generateSignature(coinbase.privateKey);
         blockchain.genesisTransaction.transactionID = "0";
-        blockchain.genesisTransaction.outputs.add(new TransactionOutput(blockchain.genesisTransaction.recipient,
+        blockchain.genesisTransaction.outputs.add(new TransactionOutput(blockchain.genesisTransaction.recipientPubK,
                 blockchain.genesisTransaction.value,
                 blockchain.genesisTransaction.transactionID));
         blockchain.UTXOs.put(blockchain.genesisTransaction.outputs.get(0).id, blockchain.genesisTransaction.outputs.get(0));
 
-        System.out.println(blockchain.genesisTransaction.toJSON());
-
-        System.out.println("Creating and mining genesis block...");
         Block genesisBlock = new Block("0");
         genesisBlock.addTransaction(blockchain.genesisTransaction);
         blockchain.addBlock(genesisBlock);
-
-
-        //testing
-        Block block1 = new Block(genesisBlock.getHash());
-        System.out.println("\nWalletA's balance is: " + walletA.getBalance());
-        System.out.println("\nWalletA is Attempting to send funds (40) to WalletB...");
-        block1.addTransaction(walletA.generateTransaction(walletB.publicKey, 40f));
-        blockchain.addBlock(block1);
-        System.out.println("\nWalletA's balance is: " + walletA.getBalance());
-        System.out.println("WalletB's balance is: " + walletB.getBalance());
-
-        Block block2 = new Block(block1.getHash());
-        System.out.println("\nWalletA Attempting to send more funds (1000) than it has...");
-        block2.addTransaction(walletA.generateTransaction(walletB.publicKey, 1000f));
-        blockchain.addBlock(block2);
-        System.out.println("\nWalletA's balance is: " + walletA.getBalance());
-        System.out.println("WalletB's balance is: " + walletB.getBalance());
-
-        Block block3 = new Block(block2.getHash());
-        System.out.println("\nWalletB is Attempting to send funds (20) to WalletA...");
-        block3.addTransaction(walletB.generateTransaction( walletA.publicKey, 20));
-        System.out.println("\nWalletA's balance is: " + walletA.getBalance());
-        System.out.println("WalletB's balance is: " + walletB.getBalance());
-
-        blockchain.isChainValid();
     }
 
+    @JsonIgnore
     public Boolean isChainValid() {
         Block currentBlock;
         Block previousBlock;
@@ -119,7 +145,7 @@ public class BlockChain {
                 }
 
                 for (TransactionInput input: transaction.inputs){
-                    tempTXO = tempUTXOs.get(input.transactionOutputID);
+                    tempTXO = tempUTXOs.get(input.UTXO.id);
                     if(tempTXO == null){
                         System.out.println("Referenced input on transaction [" + t + "] is missing.");
                         return false;
@@ -128,18 +154,18 @@ public class BlockChain {
                         System.out.println("Referenced input transaction [" + t + "] value is invalid");
                         return false;
                     }
-                    tempUTXOs.remove(input.transactionOutputID);
+                    tempUTXOs.remove(input.UTXO.id);
                 }
 
                 for (TransactionOutput TXO: transaction.outputs){
                     tempUTXOs.put(TXO.id, TXO);
                 }
 
-                if(transaction.outputs.get(0).recipient != transaction.recipient){
-                    System.out.println("Transaction [" + t + "] output recipient is not who it should be.");
+                if(!transaction.outputs.get(0).recipientPubK.equals(transaction.recipientPubK)){
+                    System.out.println("Transaction [" + t + "] output recipientPubK is not who it should be.");
                     return false;
                 }
-                if(transaction.outputs.get(1).recipient != transaction.sender){
+                if(!transaction.outputs.get(1).recipientPubK.equals(transaction.senderPubK)){
                     System.out.println("Transaction [" + t + "] output 'change' is not sender.");
                     return false;
                 }
@@ -154,12 +180,30 @@ public class BlockChain {
         blockchain.add(block);
     }
 
-    public void loadFromFile(){
-
+    public static BlockChain loadFromFile(String filepath){
+        try {
+            instance = mapper.readValue(new File(filepath), BlockChain.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return instance;
     }
 
     public void saveToFile(){
+        try {
+            mapper.writeValue(new File("blockchain.json"), this);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
+    public String toJSON(){
+        try {
+            return mapper.writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 }

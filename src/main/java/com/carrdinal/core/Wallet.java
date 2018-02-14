@@ -40,7 +40,7 @@ public class Wallet {
     public float getBalance() {
         float total = 0;
         for(TransactionOutput UTXO: blockchain.UTXOs.values()){
-            if(UTXO.isOwnedBy(publicKey)){
+            if(UTXO.isOwnedBy(CryptoUtil.getStringFromKey(publicKey))){
                 UTXOs.put(UTXO.id, UTXO); // Add to *our* list of unspent transactions
                 total += UTXO.value;
             }
@@ -58,15 +58,18 @@ public class Wallet {
         float total = 0;
         for(TransactionOutput UTXO: UTXOs.values()){
             total += UTXO.value;
-            inputs.add(new TransactionInput(UTXO.id));
+            inputs.add(new TransactionInput(UTXO));
             if(total>value) break;
         }
 
-        Transaction transaction = new Transaction(publicKey, recipient, value, inputs);
+        Transaction transaction = new Transaction(CryptoUtil.getStringFromKey(publicKey),
+                                                  CryptoUtil.getStringFromKey(recipient),
+                                                  value,
+                                                  inputs);
         transaction.generateSignature(privateKey);
 
         for (TransactionInput input: inputs){
-            UTXOs.remove(input.transactionOutputID);
+            UTXOs.remove(input.UTXO.id);
         }
 
         return transaction;

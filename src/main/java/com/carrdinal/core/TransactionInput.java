@@ -1,12 +1,17 @@
 package com.carrdinal.core;
 
-public class TransactionInput {
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-    public String transactionOutputID;
-    public TransactionOutput UTXO;
+import java.io.Serializable;
 
-    public TransactionInput(String transactionOutputID){
-        this.transactionOutputID = transactionOutputID;
+public class TransactionInput implements Serializable {
+
+    @JsonProperty("prev_out") public TransactionOutput UTXO;
+
+    @JsonCreator
+    public TransactionInput(@JsonProperty("prev_out") TransactionOutput UTXO){
+        this.UTXO = UTXO;
     }
 
 }
