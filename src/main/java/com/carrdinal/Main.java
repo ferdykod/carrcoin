@@ -1,5 +1,7 @@
 package com.carrdinal;
 
+import com.carrdinal.core.Block;
+import com.carrdinal.core.BlockChain;
 import com.carrdinal.network.Peer2Peer;
 
 import java.io.BufferedReader;
@@ -29,7 +31,11 @@ public class Main {
         // Setup Bouncy Castle as a security provider
         Security.addProvider(new BouncyCastleProvider());
 
+        Thread miningThread;
+
+        final BlockChain blockchain = BlockChain.loadFromFile("blockchain.json");
         int port = DEFAULT_PORT;
+
         if(args.length < 1){
             System.out.println("Setting port to default: " + DEFAULT_PORT);
         } else {
@@ -50,8 +56,20 @@ public class Main {
                     System.out.println("Quitting...");
                     running = false;
                     break;
-                case "send":
-                    System.out.println("Sending!");
+                case "save_blockchain":
+                    System.out.println("Saving blockchain to file...");
+                    blockchain.saveToFile();
+                    System.out.println("Saved to file");
+                    break;
+                case "mine_block":
+                    System.out.println("Mining a new block");
+                    miningThread = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            blockchain.addBlock();
+                        }
+                    });
+
                     break;
                 default:
                     System.out.println("Unknown command: " + command);
