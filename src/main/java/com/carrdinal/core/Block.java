@@ -89,7 +89,7 @@ public class Block implements Serializable {
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
-        return null;
+        return "failed to convert block to JSON";
     }
 
 }

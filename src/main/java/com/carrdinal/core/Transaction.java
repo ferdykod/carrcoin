@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.Serializable;
 import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.util.ArrayList;
 
 public class Transaction implements Serializable{
@@ -16,11 +15,11 @@ public class Transaction implements Serializable{
     private ObjectMapper mapper = new ObjectMapper();
     @JsonIgnore private BlockChain blockchain;
 
-    @JsonProperty("id")        public  String     transactionID;
-    @JsonProperty("sender")    public  String     senderPubK;
-    @JsonProperty("recipient") public  String     recipientPubK;
-    @JsonProperty("value")     public  float      value;
-    @JsonProperty("signature") public  byte[]     signature;
+    @JsonProperty("id")        public  String id;
+    @JsonProperty("sender")    public  String senderPubK;
+    @JsonProperty("recipient") public  String recipientPubK;
+    @JsonProperty("value")     public  float  value;
+    @JsonProperty("signature") public  byte[] signature;
 
     @JsonProperty("inputs")  public ArrayList<TransactionInput> inputs;
     @JsonProperty("outputs") public ArrayList<TransactionOutput> outputs = new ArrayList<>();
@@ -71,9 +70,9 @@ public class Transaction implements Serializable{
         }
 
         float leftOver = getInputsValue() - value;
-        transactionID = calculateHash();
-        outputs.add(new TransactionOutput(this.recipientPubK, value, transactionID)); // Send value to recipientPubK
-        outputs.add(new TransactionOutput(this.senderPubK, leftOver, transactionID)); // Send left over back to sender
+        id = calculateHash();
+        outputs.add(new TransactionOutput(this.recipientPubK, value, id)); // Send value to recipientPubK
+        outputs.add(new TransactionOutput(this.senderPubK, leftOver, id)); // Send left over back to sender
 
         // Add outputs to the unspent list
         for(TransactionOutput output: outputs){

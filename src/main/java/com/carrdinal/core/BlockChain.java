@@ -21,17 +21,17 @@ public class BlockChain implements Serializable {
     @JsonProperty("min_tx") public static final float MINIMUM_TRANSACTION = 0.01f;
     @JsonProperty("difficulty") public static int difficulty = 5;
 
-    @JsonProperty("blocks") public ArrayList<Block> blockchain = new ArrayList<>();
-    @JsonProperty("utxos") public HashMap<String, TransactionOutput> UTXOs = new HashMap<>();
+    @JsonProperty("blocks") public ArrayList<Block>                  blocks = new ArrayList<>();
+    @JsonProperty("utxos") public HashMap<String, TransactionOutput> UTXOs  = new HashMap<>();
     @JsonProperty("genesis_tx") private Transaction genesisTransaction;
 
     private static BlockChain instance;
 
     @JsonCreator
-    public BlockChain(@JsonProperty("blocks") ArrayList<Block> blockchain,
+    public BlockChain(@JsonProperty("blocks") ArrayList<Block> blocks,
             @JsonProperty("utxos") HashMap<String, TransactionOutput> UTXOs,
             @JsonProperty("genesis_tx") Transaction genesisTransaction){
-        this.blockchain = blockchain;
+        this.blocks = blocks;
         this.UTXOs = UTXOs;
         this.genesisTransaction = genesisTransaction;
     }
@@ -55,7 +55,7 @@ public class BlockChain implements Serializable {
         Wallet walletA = new Wallet();
         Wallet walletB = new Wallet();
         Wallet coinbase = new Wallet();
-        BlockChain blockchain = BlockChain.loadFromFile("blockchain.json");
+        BlockChain blockchain = BlockChain.loadFromFile("blocks.json");
 
         System.out.println(blockchain.isChainValid());
 
@@ -64,7 +64,7 @@ public class BlockChain implements Serializable {
 //        System.out.println("\nWalletA's balance is: " + walletA.getBalance());
 //        System.out.println("\nWalletA is Attempting to send funds (40) to WalletB...");
 //        block1.addTransaction(walletA.generateTransaction(walletB.publicKey, 40f));
-//        blockchain.addBlock(block1);
+//        blocks.addBlock(block1);
 //        System.out.println(genesisBlock.toJSON());
 //        System.out.println("\nWalletA's balance is: " + walletA.getBalance());
 //        System.out.println("WalletB's balance is: " + walletB.getBalance());
@@ -72,7 +72,7 @@ public class BlockChain implements Serializable {
 //        Block block2 = new Block(block1.getHash());
 //        System.out.println("\nWalletA Attempting to send more funds (1000) than it has...");
 //        block2.addTransaction(walletA.generateTransaction(walletB.publicKey, 1000f));
-//        blockchain.addBlock(block2);
+//        blocks.addBlock(block2);
 //        System.out.println("\nWalletA's balance is: " + walletA.getBalance());
 //        System.out.println("WalletB's balance is: " + walletB.getBalance());
 //
@@ -81,23 +81,26 @@ public class BlockChain implements Serializable {
 //        block3.addTransaction(walletB.generateTransaction( walletA.publicKey, 20));
 //        System.out.println("\nWalletA's balance is: " + walletA.getBalance());
 //        System.out.println("WalletB's balance is: " + walletB.getBalance());
-//        blockchain.addBlock(block3);
+//        blocks.addBlock(block3);
 //        System.out.println(block3.toJSON());
 //
-//        blockchain.isChainValid();
-//        System.out.println(blockchain.toJSON());
-//        blockchain.saveToFile();
+//        blocks.isChainValid();
+//        System.out.println(blocks.toJSON());
+//        blocks.saveToFile();
     }
 
     private static void createGenesisBlock(Wallet walletA, Wallet coinbase, BlockChain blockchain) {
         System.out.println("Creating and mining genesis block...");
 
-        blockchain.genesisTransaction = new Transaction(coinbase.publicKey, walletA.publicKey, 100f, new ArrayList<TransactionInput>());
+        blockchain.genesisTransaction = new Transaction(CryptoUtil.getStringFromKey(coinbase.publicKey),
+                CryptoUtil.getStringFromKey(walletA.publicKey),
+                100f,
+                new ArrayList<TransactionInput>());
         blockchain.genesisTransaction.generateSignature(coinbase.privateKey);
-        blockchain.genesisTransaction.transactionID = "0";
+        blockchain.genesisTransaction.id = "0";
         blockchain.genesisTransaction.outputs.add(new TransactionOutput(blockchain.genesisTransaction.recipientPubK,
                 blockchain.genesisTransaction.value,
-                blockchain.genesisTransaction.transactionID));
+                blockchain.genesisTransaction.id));
         blockchain.UTXOs.put(blockchain.genesisTransaction.outputs.get(0).id, blockchain.genesisTransaction.outputs.get(0));
 
         Block genesisBlock = new Block("0");
@@ -113,9 +116,9 @@ public class BlockChain implements Serializable {
         HashMap<String, TransactionOutput> tempUTXOs = new HashMap<String, TransactionOutput>();
         tempUTXOs.put(genesisTransaction.outputs.get(0).id, genesisTransaction.outputs.get(0));
 
-        for(int i = 1; i < blockchain.size(); i++){
-            currentBlock = blockchain.get(i);
-            previousBlock = blockchain.get(i-1);
+        for(int i = 1; i < blocks.size(); i++){
+            currentBlock = blocks.get(i);
+            previousBlock = blocks.get(i-1);
             // compare registered hash with calculated hash
             if(!currentBlock.getHash().equals(currentBlock.calculateHash())){
                 System.out.println("Current hashes not equal.");
@@ -177,7 +180,7 @@ public class BlockChain implements Serializable {
 
     public void addBlock(Block block){
         block.mineBlock(difficulty);
-        blockchain.add(block);
+        blocks.add(block);
     }
 
     public static BlockChain loadFromFile(String filepath){
@@ -191,7 +194,7 @@ public class BlockChain implements Serializable {
 
     public void saveToFile(){
         try {
-            mapper.writeValue(new File("blockchain.json"), this);
+            mapper.writeValue(new File("blocks.json"), this);
         } catch (Exception e) {
             e.printStackTrace();
         }

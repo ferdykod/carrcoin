@@ -1,13 +1,22 @@
 package com.carrdinal.network;
 
-import java.io.BufferedReader;
+import com.carrdinal.network.commands.Command;
+import com.carrdinal.network.commands.GetBlockCommandHandler;
+import com.carrdinal.network.commands.GetBlockCountCommandHandler;
+import com.carrdinal.network.commands.GetTransactionCommandHandler;
+import com.carrdinal.network.commands.PingCommandHandler;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Peer2Peer {
 
@@ -18,6 +27,7 @@ public class Peer2Peer {
     private Thread           serverThread;
     private Thread           clientThread;
     private boolean          runningServer;
+    private HashMap<String, Command> commands = new HashMap<>();
 
     public Peer2Peer(int port){
         this.port = port;
@@ -31,6 +41,15 @@ public class Peer2Peer {
                 }
             }
         });
+
+        initializeCommands();
+    }
+
+    private void initializeCommands() {
+        this.commands.put("ping", new PingCommandHandler());
+        this.commands.put("getblockcount", new GetBlockCountCommandHandler());
+        this.commands.put("getblock", new GetBlockCommandHandler());
+        this.commands.put("gettransaction", new GetTransactionCommandHandler());
     }
 
     public void start(){
@@ -80,13 +99,25 @@ public class Peer2Peer {
         }
     }
 
-    private String serve(String command) {
-        switch (command) {
-            case "ping":
-                return "pong";
-            default:
-                return "command unknown";
+    private String serve(String input) {
+        List<String> list = new ArrayList<>();
+        Matcher m = Pattern.compile("([^\"]\\S*|\".+?\")\\s*").matcher(input);
+        while (m.find()) {
+            list.add(m.group(1));
         }
+
+        String command = list.remove(0); // Get the command and remove it from the list.
+
+        if(!commands.containsKey(command)){
+            return "'" + command + "' is not a command.";
+        }
+
+        String[] args = null;
+        if (list.size() > 0){
+            args = list.toArray(new String[list.size()]);
+        }
+
+        return commands.get(command).execute(args);
     }
 
     public void send(String data, DataOutputStream out){
@@ -111,7 +142,12 @@ public class Peer2Peer {
     }
 
     public static void main(String[] args) throws IOException {
+        Peer2Peer node1 = new Peer2Peer(8888);
+        Peer2Peer node2 = new Peer2Peer(8889);
 
+        node1.start();
+        node2.connect("127.0.0.1", 8888);
+        node2.send("ping", node2.outputStream);
     }
 
 
