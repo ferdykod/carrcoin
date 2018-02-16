@@ -31,7 +31,7 @@ public class Main {
         // Setup Bouncy Castle as a security provider
         Security.addProvider(new BouncyCastleProvider());
 
-        Thread miningThread;
+        Thread miningThread = null;
 
         final BlockChain blockchain = BlockChain.loadFromFile("blockchain.json");
         int port = DEFAULT_PORT;
@@ -48,7 +48,6 @@ public class Main {
         boolean running = true;
         String command;
         while(running){
-            System.out.print(">>>");
             command = br.readLine();
             switch(command){
                 case "q":
@@ -61,15 +60,18 @@ public class Main {
                     blockchain.saveToFile();
                     System.out.println("Saved to file");
                     break;
-                case "mine_block":
+                case "mine":
                     System.out.println("Mining a new block");
+                    if(miningThread != null && miningThread.isAlive()){
+                        System.out.println("Mining already!");
+                    }
                     miningThread = new Thread(new Runnable() {
                         @Override
                         public void run() {
                             blockchain.addBlock();
                         }
                     });
-
+                    miningThread.start();
                     break;
                 default:
                     System.out.println("Unknown command: " + command);

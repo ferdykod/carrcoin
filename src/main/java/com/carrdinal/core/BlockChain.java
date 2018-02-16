@@ -25,7 +25,7 @@ public class BlockChain implements Serializable {
     @JsonProperty("utxos") public HashMap<String, TransactionOutput> UTXOs = new HashMap<>();
     @JsonProperty("genesis_tx") private Transaction genesisTransaction;
 
-    public Block currentBlock;
+    public static Block currentBlock;
     private static BlockChain instance;
 
     @JsonCreator
@@ -57,6 +57,8 @@ public class BlockChain implements Serializable {
         Wallet walletB = new Wallet();
         Wallet coinbase = new Wallet();
         BlockChain blockchain = BlockChain.loadFromFile("blockchain.json");
+
+        blockchain.addBlock();
 
         System.out.println(blockchain.isChainValid());
 
@@ -93,7 +95,10 @@ public class BlockChain implements Serializable {
     private static void createGenesisBlock(Wallet walletA, Wallet coinbase, BlockChain blockchain) {
         System.out.println("Creating and mining genesis block...");
 
-        blockchain.genesisTransaction = new Transaction(coinbase.publicKey, walletA.publicKey, 100f, new ArrayList<TransactionInput>());
+        blockchain.genesisTransaction = new Transaction(CryptoUtil.getStringFromKey(coinbase.publicKey),
+                CryptoUtil.getStringFromKey(walletA.publicKey),
+                100f,
+                new ArrayList<TransactionInput>());
         blockchain.genesisTransaction.generateSignature(coinbase.privateKey);
         blockchain.genesisTransaction.id = "0";
         blockchain.genesisTransaction.outputs.add(new TransactionOutput(blockchain.genesisTransaction.recipientPubK,
@@ -103,7 +108,8 @@ public class BlockChain implements Serializable {
 
         Block genesisBlock = new Block("0");
         genesisBlock.addTransaction(blockchain.genesisTransaction);
-        blockchain.addBlock(genesisBlock);
+        BlockChain.currentBlock = genesisBlock;
+        blockchain.addBlock();
     }
 
     @JsonIgnore
@@ -179,11 +185,13 @@ public class BlockChain implements Serializable {
     public void addBlock(){
         currentBlock.mineBlock(difficulty);
         blocks.add(currentBlock);
+        currentBlock = new Block(blocks.get(blocks.size()-1).getHash());
     }
 
     public static BlockChain loadFromFile(String filepath){
         try {
             instance = mapper.readValue(new File(filepath), BlockChain.class);
+            currentBlock = new Block(instance.blocks.get(instance.blocks.size()-1).getHash());
         } catch (Exception e) {
             e.printStackTrace();
         }
