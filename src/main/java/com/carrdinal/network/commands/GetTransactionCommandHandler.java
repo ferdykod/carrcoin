@@ -11,14 +11,10 @@ public class GetTransactionCommandHandler extends Command {
             return "gettransaction []: must specify the txid";
         }
         String txid = args[0];
-        // TODO improve performance with HashTable of transactions
-        for(Block block : BlockChain.getInstance().blocks) {
-            for (Transaction tx : block.transactions) {
-                if (tx.id.equals(txid)) {
-                    return tx.toJSON();
-                }
-            }
-        }
+
+        Transaction tx = BlockChain.getInstance().getTransaction(txid);
+        if (tx != null) return tx.toJSON();
+
         return "gettransaction [" + txid + "]: could not find this transaction";
     }
 

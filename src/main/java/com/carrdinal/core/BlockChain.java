@@ -215,4 +215,24 @@ public class BlockChain implements Serializable {
         return null;
     }
 
+    public Transaction getTransaction(String hash){
+        // TODO improve performance with HashTable of transactions or a DB
+        for(Block block : BlockChain.getInstance().blocks) {
+            for (Transaction tx : block.transactions) {
+                if (tx.id.equals(hash)) {
+                    return tx;
+                }
+            }
+        }
+        return null;
+    }
+
+    public Block getBlock(String hash) {
+        for(Block block : BlockChain.getInstance().blocks){
+            if(block.getHash().equals(hash)){
+                return block;
+            }
+        }
+        return null;
+    }
 }
